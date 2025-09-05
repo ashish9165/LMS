@@ -4,7 +4,7 @@ import axios from 'axios'
 const AuthContext = createContext()
 
 // Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:5000/api'
+axios.defaults.baseURL = 'https://lms-6nmc.onrender.com/api'
 axios.defaults.withCredentials = true
 
 export const useAuth = () => {
