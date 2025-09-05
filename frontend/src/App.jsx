@@ -18,6 +18,7 @@ import CertificateViewer from './components/students/CertificateViewer.jsx'
 import CourseAssignments from './pages/student/CourseAssignments.jsx'
 import About from './pages/student/About.jsx'
 import Contact from './pages/student/Contact.jsx'
+import Profile from './pages/Profile.jsx'
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx'
 import Auth from './pages/auth/Auth.jsx'
 import Navbar from './components/students/navbar.jsx'
@@ -70,6 +71,11 @@ const App = () => {
       } />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
       <Route path="/auth" element={<Auth />} />
 
       <Route path="/loading/:path" element={<Loading/>} />

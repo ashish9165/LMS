@@ -45,6 +45,14 @@ export const register = async (req, res) => {
       })
     }
 
+    // Validate password (no spaces)
+    if (/\s/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password cannot contain spaces'
+      })
+    }
+
     // Hash password
     const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(password, salt)
@@ -298,6 +306,14 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Password must be at least 6 characters long'
+      })
+    }
+
+    // Validate password (no spaces)
+    if (/\s/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password cannot contain spaces'
       })
     }
 

@@ -142,6 +142,31 @@ const handleLecture =(action,chapterId,lectureIndex) => {
   const handleSubmit=async(e)=>{
     e.preventDefault()
     try {
+      // Validate course price
+      if (courseprice < 0) {
+        alert('Error: Course price cannot be negative. Please enter a valid price.')
+        return
+      }
+
+      // Validate discount
+      if (discount < 0 || discount > 100) {
+        alert('Error: Discount must be between 0 and 100 percent.')
+        return
+      }
+
+      // Validate that course must have at least one chapter with lectures
+      if (chapters.length === 0) {
+        alert('Error: Course content is required. Please add at least one chapter with lectures.')
+        return
+      }
+
+      // Validate that all chapters must have at least one lecture
+      const emptyChapters = chapters.filter(ch => ch.chapterContent.length === 0)
+      if (emptyChapters.length > 0) {
+//alert(`Error: Chapter "${emptyChapters[0].courseTitle}" has no lectures. Please add at least one lecture to each chapter.`)
+        return
+      }
+
       // Build courseContent shape expected by backend
       const normalizedContent = chapters.map(ch => ({
         chapterTitle: ch.courseTitle,
@@ -238,19 +263,38 @@ const handleLecture =(action,chapterId,lectureIndex) => {
               <div className='space-y-2'>
                 <label className='block text-sm font-semibold text-gray-700'>Course Price</label>
                 <input 
-                  onChange={e => setCoursePrice(e.target.value)} 
+                  onChange={e => {
+                    const value = e.target.value
+                    if (value < 0) {
+                      setCoursePrice(0)
+                    } else {
+                      setCoursePrice(value)
+                    }
+                  }} 
                   value={courseprice} 
                   type='number' 
                   placeholder='0' 
+                  min='0'
+                  step='0.01'
                   className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300' 
                   required 
                 />
+               
         </div>
               
               <div className='space-y-2'>
                 <label className='block text-sm font-semibold text-gray-700'>Discount %</label>
                 <input 
-                  onChange={e => setDiscount(e.target.value)} 
+                  onChange={e => {
+                    const value = e.target.value
+                    if (value < 0) {
+                      setDiscount(0)
+                    } else if (value > 100) {
+                      setDiscount(100)
+                    } else {
+                      setDiscount(value)
+                    }
+                  }} 
                   value={discount} 
                   type='number' 
                   placeholder='0' 
@@ -259,6 +303,7 @@ const handleLecture =(action,chapterId,lectureIndex) => {
                   className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300' 
                   required 
                 />
+               
         </div>
               
               <div className='space-y-2'>

@@ -18,10 +18,10 @@ export const createOrder = async (req, res) => {
     const { amount } = req.body;
     
     // Validate input
-    if (!amount || isNaN(amount) || amount <= 0) {
+    if (!amount || isNaN(amount) || amount < 0) {
       return res.status(400).json({
         success: false,
-        message: "Invalid amount. Amount must be a positive number."
+        message: "Invalid amount. Amount must be a non-negative number."
       });
     }
 

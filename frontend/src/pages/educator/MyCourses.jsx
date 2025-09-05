@@ -161,7 +161,7 @@ const MyCourses = () => {
                         />
                         <div className='flex-1 min-w-0'>
                           <p className='text-sm sm:text-base font-medium text-gray-900 truncate'>{course.courseTitle}</p>
-                          <p className='text-xs text-gray-500 hidden sm:block'>{course.courseDescription?.substring(0, 50)}...</p>
+                          <p className='text-xs text-gray-500 hidden sm:block'>{(course.courseDescription ? course.courseDescription.replace(/<[^>]*>/g, '') : '').substring(0, 50)}...</p>
                         </div>
                       </div>
                     </td>

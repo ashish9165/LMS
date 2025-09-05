@@ -29,6 +29,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       .required('Email is required'),
     password: Yup.string()
       .min(6, 'Password must be at least 6 characters')
+      .matches(/^\S*$/, 'Password cannot contain spaces')
       .required('Password is required'),
     confirmPassword: Yup.string()
       .oneOf([Yup.ref('password'), null], 'Passwords must match')
@@ -125,114 +126,124 @@ const RegisterForm = ({ onSwitchToLogin }) => {
     setOtpMessage({ type: '', text: '' })
   }
 
+  // Handle password input to prevent spaces
+  const handlePasswordInput = (e, setFieldValue, fieldName) => {
+    const value = e.target.value
+    // Remove any spaces from the input
+    const cleanValue = value.replace(/\s/g, '')
+    setFieldValue(fieldName, cleanValue)
+  }
+
   // Step 1: Basic Information
   if (currentStep === 'info') {
-    return (
-      <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+  return (
+    <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Create Account</h2>
-        
-        <Formik
-          initialValues={{ 
-            name: '', 
-            email: '', 
-            password: '', 
+      
+      <Formik
+        initialValues={{ 
+          name: '', 
+          email: '', 
+          password: '', 
             confirmPassword: '' 
-          }}
-          validationSchema={validationSchema}
+        }}
+        validationSchema={validationSchema}
           onSubmit={handleSendOTP}
-        >
-          {({ isSubmitting, errors, touched }) => (
-            <Form className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <Field
-                  type="text"
-                  id="name"
-                  name="name"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.name && touched.name ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your full name"
-                />
-                <ErrorMessage name="name" component="div" className="text-red-500 text-sm mt-1" />
-              </div>
+      >
+        {({ isSubmitting, errors, touched, setFieldValue }) => (
+          <Form className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <Field
+                type="text"
+                id="name"
+                name="name"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.name && touched.name ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter your full name"
+              />
+              <ErrorMessage name="name" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <Field
-                  type="email"
-                  id="email"
-                  name="email"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.email && touched.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your email"
-                />
-                <ErrorMessage name="email" component="div" className="text-red-500 text-sm mt-1" />
-              </div>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <Field
+                type="email"
+                id="email"
+                name="email"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.email && touched.email ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter your email"
+              />
+              <ErrorMessage name="email" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <Field
-                  type="password"
-                  id="password"
-                  name="password"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.password && touched.password ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your password"
-                />
-                <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
-              </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <Field
+                type="password"
+                id="password"
+                name="password"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.password && touched.password ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter your password (no spaces allowed)"
+                onInput={(e) => handlePasswordInput(e, setFieldValue, 'password')}
+              />
+              <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
 
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <Field
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.confirmPassword && touched.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Confirm your password"
-                />
-                <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-sm mt-1" />
-              </div>
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <Field
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.confirmPassword && touched.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Confirm your password (no spaces allowed)"
+                onInput={(e) => handlePasswordInput(e, setFieldValue, 'confirmPassword')}
+              />
+              <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
 
 
 
-              <button
-                type="submit"
-                disabled={isSubmitting || isSendingOTP}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSendingOTP ? 'Sending OTP...' : 'Send OTP'}
-              </button>
-            </Form>
-          )}
-        </Formik>
-
-        <div className="mt-4 text-center">
-          <p className="text-gray-600">
-            Already have an account?{' '}
             <button
-              onClick={onSwitchToLogin}
-              className="text-blue-500 hover:text-blue-600 font-medium"
+              type="submit"
+                disabled={isSubmitting || isSendingOTP}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Login here
+                {isSendingOTP ? 'Sending OTP...' : 'Send OTP'}
             </button>
-          </p>
-        </div>
+          </Form>
+        )}
+      </Formik>
+
+      <div className="mt-4 text-center">
+        <p className="text-gray-600">
+          Already have an account?{' '}
+          <button
+            onClick={onSwitchToLogin}
+            className="text-blue-500 hover:text-blue-600 font-medium"
+          >
+            Login here
+          </button>
+        </p>
       </div>
-    )
+    </div>
+  )
   }
 
   // Step 2: OTP Verification

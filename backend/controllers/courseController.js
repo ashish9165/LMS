@@ -34,6 +34,21 @@ export const createCourse = async (req, res) => {
     const price = Number(coursePrice)
     const off = Number(discount)
 
+    // Validate price and discount
+    if (price < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Course price cannot be negative'
+      })
+    }
+
+    if (off < 0 || off > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Discount must be between 0 and 100 percent'
+      })
+    }
+
     const course = await Course.create({
       courseTitle,
       courseDescription: courseDescription || '',
@@ -193,6 +208,27 @@ export const updateCourse = async (req, res) => {
     // Parse course content if provided
     if (updateData.courseContent) {
       updateData.courseContent = JSON.parse(updateData.courseContent)
+    }
+
+    // Validate price and discount if provided
+    if (updateData.coursePrice !== undefined) {
+      const price = Number(updateData.coursePrice)
+      if (price < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Course price cannot be negative'
+        })
+      }
+    }
+
+    if (updateData.discount !== undefined) {
+      const discount = Number(updateData.discount)
+      if (discount < 0 || discount > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Discount must be between 0 and 100 percent'
+        })
+      }
     }
 
     const course = await Course.findOneAndUpdate(

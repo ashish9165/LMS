@@ -32,7 +32,7 @@ const chapterSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  chapterContent: [lectureSchema],
+  chapterContent: [lectureSchema ],
   chapterOrder: {
     type: Number,
     default: 1
@@ -56,11 +56,26 @@ const courseSchema = new mongoose.Schema({
   coursePrice: {
     type: Number,
     required: true,
-    default: 0
+    default: 0,
+    min: 0,
+    validate: {
+      validator: function(v) {
+        return v >= 0
+      },
+      message: 'Course price cannot be negative'
+    }
   },
   discount: {
     type: Number,
-    default: 0
+    default: 0,
+    min: 0,
+    max: 100,
+    validate: {
+      validator: function(v) {
+        return v >= 0 && v <= 100
+      },
+      message: 'Discount must be between 0 and 100 percent'
+    }
   },
   courseThumbnail: {
     type: String,

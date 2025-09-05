@@ -16,11 +16,22 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-    minlength: 6
+    minlength: 6,
+    validate: {
+      validator: function(v) {
+        return !/\s/.test(v); // No spaces allowed
+      },
+      message: 'Password cannot contain spaces'
+    }
   },
   imageUrl: {
     type: String,
     default: ''
+  },
+  bio: {
+    type: String,
+    default: '',
+    trim: true
   },
   role: {
     type: String,

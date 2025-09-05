@@ -1,6 +1,7 @@
 import Course from '../models/Course.js'
 import Enrollment from '../models/Enrollment.js'
 import User from '../models/User.js'
+import bcrypt from 'bcryptjs'
 
 // Get educator dashboard data
 export const getDashboardData = async (req, res) => {
@@ -312,6 +313,159 @@ export const getEnrolledStudentsData = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch enrolled students data'
+    })
+  }
+}
+
+// Add new educator (only existing educators can add new educators)
+export const addNewEducator = async (req, res) => {
+  try {
+    const { name, email, password, bio } = req.body
+
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, and password are required'
+      })
+    }
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email })
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      })
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash(password, salt)
+
+    // Create new educator
+    const newEducator = new User({
+      name,
+      email,
+      password: hashedPassword,
+      bio: bio || '',
+      role: 'educator',
+      isEducator: true,
+      isEmailVerified: true // Auto-verify educators added by existing educators
+    })
+
+    await newEducator.save()
+
+    // Remove password from response
+    const educatorResponse = {
+      _id: newEducator._id,
+      name: newEducator.name,
+      email: newEducator.email,
+      bio: newEducator.bio,
+      role: newEducator.role,
+      isEducator: newEducator.isEducator,
+      createdAt: newEducator.createdAt
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'New educator added successfully',
+      educator: educatorResponse
+    })
+  } catch (error) {
+    console.error('Add new educator error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add new educator'
+    })
+  }
+}
+
+// Delete educator (only existing educators can delete other educators)
+export const deleteEducator = async (req, res) => {
+  try {
+    const { educatorId } = req.params
+    const currentEducatorId = req.userId
+
+    // Prevent self-deletion
+    if (educatorId === currentEducatorId) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot delete your own account'
+      })
+    }
+
+    // Check if educator exists
+    const educatorToDelete = await User.findById(educatorId)
+    if (!educatorToDelete) {
+      return res.status(404).json({
+        success: false,
+        message: 'Educator not found'
+      })
+    }
+
+    // Check if user is actually an educator
+    if (!educatorToDelete.isEducator && educatorToDelete.role !== 'educator') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is not an educator'
+      })
+    }
+
+    // Check if educator has any courses
+    // const coursesCount = await Course.countDocuments({ educator: educatorId })
+    // if (coursesCount > 0) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: `Cannot delete educator. They have ${coursesCount} course(s) associated with them. Please reassign or delete the courses first.`
+    //   })
+    // }
+
+    // Delete the educator
+    await User.findByIdAndDelete(educatorId)
+
+    res.status(200).json({
+      success: true,
+      message: 'Educator deleted successfully'
+    })
+  } catch (error) {
+    console.error('Delete educator error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete educator'
+    })
+  }
+}
+
+// Get all educators (for management purposes)
+export const getAllEducators = async (req, res) => {
+  try {
+    const educators = await User.find({ 
+      $or: [{ role: 'educator' }, { isEducator: true }] 
+    })
+    .select('-password')
+    .sort({ createdAt: -1 })
+
+    // Get course count for each educator
+    const educatorsWithCourseCount = await Promise.all(
+      educators.map(async (educator) => {
+        const courseCount = await Course.countDocuments({ educator: educator._id })
+        return {
+          ...educator.toObject(),
+          courseCount
+        }
+      })
+    )
+
+    res.status(200).json({
+      success: true,
+      educators: educatorsWithCourseCount
+    })
+  } catch (error) {
+    console.error('Get all educators error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch educators'
     })
   }
 }

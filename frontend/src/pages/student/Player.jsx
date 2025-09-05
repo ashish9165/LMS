@@ -1,6 +1,7 @@
 import React, { useContext, useEffect ,useState} from 'react'
 import { useParams } from 'react-router-dom'
 import { AppContext } from '../../context/AppContext'
+import { useAuth } from '../../context/AuthContext'
 import { assets } from '../../assets/assets'
 import humanizeDuration from 'humanize-duration'
 import YouTube from 'react-youtube'
@@ -10,11 +11,13 @@ import axios from 'axios'
 
 const Player = () => {
   const { enrolledCourses, calculateChapterTime, fetchAllCourses, navigate, fetchEnrolledCourses } = useContext(AppContext)
+  const { user, isEducator } = useAuth()
   const { courseId } = useParams()
   const [courseData, setCourseData] = useState(null)
   const [openSections, setOpenSections] = useState({})
   const [playerData, setPlayerData] = useState(null)
   const [ratingValue, setRatingValue] = useState(0)
+  const [isCourseOwner, setIsCourseOwner] = useState(false)
   
   const getYouTubeId = (url) => {
     if (!url || typeof url !== 'string') return null
@@ -38,12 +41,37 @@ const Player = () => {
     }
   }
 
-  const getCourseData = () => {
-     enrolledCourses.map((course) => {
-      if (course._id === courseId) {
-        setCourseData(course)
+  const getCourseData = async () => {
+    // First check if user is enrolled in this course
+    const enrolledCourse = enrolledCourses.find(course => course._id === courseId)
+    if (enrolledCourse) {
+      setCourseData(enrolledCourse)
+      setIsCourseOwner(false)
+      return
+    }
+
+    // If not enrolled, check if user is an educator and owns this course
+    if (isEducator && user) {
+      try {
+        const response = await axios.get(`/courses/${courseId}`)
+        if (response.data.success) {
+          const course = response.data.course
+          // Check if current user is the educator of this course
+          if (course.educator && course.educator._id === user._id) {
+            setCourseData(course)
+            setIsCourseOwner(true)
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching course data:', error)
       }
-    })
+    }
+
+    // If neither enrolled nor course owner, redirect or show error
+    if (!enrolledCourse && !isCourseOwner) {
+      navigate('/courses')
+    }
   }
   const troggleSection = (index) => {
     setOpenSections((prev) => (
@@ -56,7 +84,7 @@ const Player = () => {
 
   useEffect(() => {
     getCourseData()
-  },[enrolledCourses])
+  },[enrolledCourses, isEducator, user])
 
   useEffect(() => {
     // Initialize rating from enrollment if present
@@ -66,6 +94,9 @@ const Player = () => {
   }, [courseData])
 
   const isLectureCompleted = (lectureId) => {
+    // For course owners, all lectures are considered "completed" for UI purposes
+    if (isCourseOwner) return true
+    
     const completed = courseData?._enrollment?.progress?.completedLectures || []
     return completed.includes(lectureId)
   }
@@ -73,12 +104,20 @@ const Player = () => {
   const getProgress = () => {
     if (!courseData) return { completed: 0, total: 0 }
     const total = (courseData.courseContent || []).reduce((sum, ch) => sum + (ch.chapterContent?.length || 0), 0)
+    
+    // For course owners, show all lectures as completed
+    if (isCourseOwner) return { completed: total, total }
+    
     const completed = courseData._enrollment?.progress?.completedLectures?.length || 0
     return { completed, total }
   }
 
   const markCompleted = async () => {
     if (!playerData?.lectureId || isLectureCompleted(playerData.lectureId)) return
+    
+    // Course owners don't need to mark lectures as completed
+    if (isCourseOwner) return
+    
     try {
       await axios.put(`/courses/${courseId}/progress/${playerData.lectureId}`, {}, { withCredentials: true })
       // Optimistically update local state
@@ -125,7 +164,14 @@ const Player = () => {
       <div className='p-4 sm:p-10 flex flex-col-reverse md:grid md:grid-cols-3 gap-10 md:px-12'>
         {/* left column */}
         <div className='text-gray-800'>
-          <h2 className='text-xl font-semibold'>Course Structure</h2>
+          <div className='flex items-center gap-3'>
+            <h2 className='text-xl font-semibold'>Course Structure</h2>
+            {isCourseOwner && (
+              <span className='px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full'>
+                Course Owner
+              </span>
+            )}
+          </div>
           <div className="pt-5">
             {courseData && courseData.courseContent.map((chapter, index) => (
               <div key={index} className='border border-gray-300 bg-white mb-2 rounded'>
@@ -162,10 +208,12 @@ const Player = () => {
               </div>
             ))}
           </div>
-          <div className='flex items-center gap-3 py-3 mt-10'>
-            <span className="text-lg font-semibold">Rate this course :</span>
-            <Rating initialRating={ratingValue} onRate={(val) => submitRating(val)} />
-          </div>
+          {!isCourseOwner && (
+            <div className='flex items-center gap-3 py-3 mt-10'>
+              <span className="text-lg font-semibold">Rate this course :</span>
+              <Rating initialRating={ratingValue} onRate={(val) => submitRating(val)} />
+            </div>
+          )}
 
           {allCompleted && (
             <div className='mt-6 p-4 bg-green-50 border border-green-200 rounded'>
@@ -187,7 +235,11 @@ const Player = () => {
           ) })()}
           <div className='flex justify-between items-center mt-1'>
             <p>{playerData.chapter}.{playerData.lectureTitle}</p>
-            <button onClick={markCompleted} disabled={isLectureCompleted(playerData.lectureId)} className={`text-blue-500 ${isLectureCompleted(playerData.lectureId) ? 'opacity-50 cursor-not-allowed' : ''}`}>{isLectureCompleted(playerData.lectureId) ? 'Completed' : 'Mark Completed'}</button>
+            {isCourseOwner ? (
+              <span className="text-green-600 font-medium">Course Owner</span>
+            ) : (
+              <button onClick={markCompleted} disabled={isLectureCompleted(playerData.lectureId)} className={`text-blue-500 ${isLectureCompleted(playerData.lectureId) ? 'opacity-50 cursor-not-allowed' : ''}`}>{isLectureCompleted(playerData.lectureId) ? 'Completed' : 'Mark Completed'}</button>
+            )}
           </div>
         </div>):
         <img src={courseData ? courseData.courseThumbnail : 'nu'} alt=""  />}

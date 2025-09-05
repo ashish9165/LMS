@@ -3,7 +3,10 @@ import {
   getDashboardData,
   getCourseAnalytics,
   getEnrolledStudents,
-  getEnrolledStudentsData
+  getEnrolledStudentsData,
+  addNewEducator,
+  getAllEducators,
+  deleteEducator
 } from '../controllers/dashboardController.js'
 import { adminAuth, protect } from '../middleware/auth.js'
 
@@ -23,5 +26,10 @@ router.get('/course/:courseId/students',adminAuth, getEnrolledStudents)
 
 // Get enrolled students data for dashboard
 router.get('/enrolled-students', getEnrolledStudentsData)
+
+// Educator management routes (only for existing educators)
+router.post('/educators', adminAuth, addNewEducator)
+router.get('/educators', adminAuth, getAllEducators)
+router.delete('/educators/:educatorId', adminAuth, deleteEducator)
 
 export default router

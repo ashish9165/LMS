@@ -82,12 +82,64 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const updateProfile = async (profileData) => {
+    try {
+      const formData = new FormData()
+      
+      // Add text fields
+      if (profileData.name) formData.append('name', profileData.name)
+      if (profileData.email) formData.append('email', profileData.email)
+      if (profileData.bio) formData.append('bio', profileData.bio)
+      
+      // Add image if provided
+      if (profileData.image) {
+        formData.append('image', profileData.image)
+      }
+
+      const response = await axios.put('/users/profile', formData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      if (response.data.success) {
+        setUser(response.data.user)
+        return { success: true, message: response.data.message }
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to update profile' 
+      }
+    }
+  }
+
+  const changePassword = async (passwordData) => {
+    try {
+      const response = await axios.put('/users/change-password', passwordData, {
+        withCredentials: true
+      })
+
+      if (response.data.success) {
+        return { success: true, message: response.data.message }
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to change password' 
+      }
+    }
+  }
+
   const value = {
     user,
     loading,
     register,
     login,
     logout,
+    updateProfile,
+    changePassword,
     isAuthenticated: !!user,
     isEducator: user?.role === 'educator',
     isStudent: user?.role === 'student',

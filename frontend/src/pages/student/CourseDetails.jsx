@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AppContext } from '../../context/AppContext'
+import { useAuth } from '../../context/AuthContext'
 import Loading from '../../components/students/Loading'
 import { assets } from '../../assets/assets'
 import humanizeDuration from 'humanize-duration'
@@ -10,9 +11,11 @@ import axios from 'axios'
 const CourseDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user, isEducator } = useAuth()
   const [courseData, setCourseData] = useState(null)
   const [openSections, setOpenSections] = useState({})
   const [alreadyEnrolled, setAlreadyEnrolled] = useState(false)
+  const [isCourseOwner, setIsCourseOwner] = useState(false)
   const [playerData, setPlayerData] = useState(null)
   const { allcourses, calculateRating, calculateNoOfLecture, calculateCourseDuration, calculateChapterTime, currency, fetchAllCourses } = useContext(AppContext)
   const [ratingValue, setRatingValue] = useState(5)
@@ -149,15 +152,26 @@ const CourseDetails = () => {
   useEffect(() => {
     const checkEnrollment = async () => {
       try {
+        // First check if user is enrolled
         const res = await axios.get('/courses/enrolled/my-courses', { withCredentials: true })
         const found = (res.data.enrollments || []).some(en => en.course && en.course._id === id)
         setAlreadyEnrolled(found)
+        
+        // If not enrolled, check if user is the course owner
+        if (!found && isEducator && user && courseData) {
+          const isOwner = courseData.educator && courseData.educator._id === user._id
+          setIsCourseOwner(isOwner)
+          if (isOwner) {
+            setAlreadyEnrolled(true) // Allow access for course owners
+          }
+        }
       } catch (_) {
         setAlreadyEnrolled(false)
+        setIsCourseOwner(false)
       }
     }
     checkEnrollment()
-  }, [id])
+  }, [id, isEducator, user, courseData])
 
   const troggleSection = (index) => {
     setOpenSections((prev) => (
@@ -326,14 +340,18 @@ const CourseDetails = () => {
                   handlePayment()
                 }
               }}
-              disabled={!courseData || !courseData.coursePrice}
+              disabled={!courseData || (!courseData.coursePrice && !isCourseOwner)}
               className={`md:mt-6 mt-4 w-full py-4 rounded-lg font-semibold text-lg transition-all duration-200 ${
-                !courseData || !courseData.coursePrice 
+                !courseData || (!courseData.coursePrice && !isCourseOwner)
                   ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                  : isCourseOwner 
+                    ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                    : 'bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
               }`}
             >
-              {!courseData ? 'Loading...' : alreadyEnrolled ? 'Watch Now' : 'Buy Now'}
+              {!courseData ? 'Loading...' : 
+               isCourseOwner ? 'View My Course' : 
+               alreadyEnrolled ? 'Watch Now' : 'Buy Now'}
             </button>
             <div className='pt-6 pb-6'><p className='md:text-xl text-lg font-semibold text-gray-800 mb-4'>
               What's in the course?</p>

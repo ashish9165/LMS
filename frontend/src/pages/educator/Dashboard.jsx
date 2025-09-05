@@ -3,12 +3,14 @@ import { useAppContext } from '../../context/AppContext'
 import { assets } from '../../assets/assets';
 import Loading from '../../components/students/Loading.jsx'
 import StatusBadge from '../../components/educator/StatusBadge.jsx'
+import EducatorManager from '../../components/educator/EducatorManager.jsx'
 
 const Dashboard = () => {
   const { currency, dashboardData, refreshDashboard, uiTheme, isMobile, isTablet, isDesktop } = useAppContext()
   const [emailStatus, setEmailStatus] = useState(null)
   const [testEmail, setTestEmail] = useState({ email: '', type: 'enrollment' })
   const [emailResult, setEmailResult] = useState(null)
+  const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
     // Refresh dashboard data when component mounts
@@ -55,8 +57,10 @@ const Dashboard = () => {
     }
   }
 
-  return dashboardData ? (
-    <div className='min-h-screen flex flex-col items-start justify-between gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8'>
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
       <div className='space-y-6 lg:space-y-8 w-full'>
         {/* Stats Cards Section */}
         <div className='flex flex-col lg:flex-row gap-4 lg:gap-6 items-start lg:items-center justify-between'>
@@ -105,6 +109,7 @@ const Dashboard = () => {
             Refresh Data
           </button>
         </div>
+
         {/* Enrollments Table Section */}
         <div className='w-full'>
           <h2 className={`pb-4 font-semibold text-gray-800 ${isMobile ? 'text-lg' : 'text-xl lg:text-2xl'}`}>
@@ -257,6 +262,46 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+        )
+      
+      case 'educators':
+        return <EducatorManager />
+      
+      default:
+        return null
+    }
+  }
+
+  return dashboardData ? (
+    <div className='min-h-screen flex flex-col items-start justify-between gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8'>
+      {/* Tab Navigation */}
+      <div className='w-full'>
+        <div className='flex space-x-1 bg-gray-100 p-1 rounded-lg'>
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'overview'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+          >
+            Dashboard Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('educators')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'educators'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+          >
+            Manage Educators
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {renderTabContent()}
     </div>
   ) : <Loading/>
 }

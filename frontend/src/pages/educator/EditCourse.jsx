@@ -61,6 +61,46 @@ const EditCourse = () => {
     setSaving(true)
 
     try {
+      // Validate course price
+      if (Number(coursePrice) < 0) {
+        alert('Error: Course price cannot be negative. Please enter a valid price.')
+        setSaving(false)
+        return
+      }
+
+      // Validate discount
+      if (Number(discount) < 0 || Number(discount) > 100) {
+        alert('Error: Discount must be between 0 and 100 percent.')
+        setSaving(false)
+        return
+      }
+
+      // Validate course content if provided
+      let parsedContent = []
+      try {
+        parsedContent = JSON.parse(courseContent)
+      } catch (error) {
+        alert('Invalid JSON format in course content. Please check the format.')
+        setSaving(false)
+        return
+      }
+
+      // Validate that course must have at least one chapter with lectures
+      if (Array.isArray(parsedContent)) {
+        if (parsedContent.length === 0) {
+          alert('Error: Course content is required. Please add at least one chapter with lectures.')
+          setSaving(false)
+          return
+        }
+
+        const emptyChapters = parsedContent.filter(ch => !ch.chapterContent || ch.chapterContent.length === 0)
+        if (emptyChapters.length > 0) {
+          alert(`Error: Chapter "${emptyChapters[0].chapterTitle}" has no lectures. Please add at least one lecture to each chapter.`)
+          setSaving(false)
+          return
+        }
+      }
+
       const formData = new FormData()
       formData.append('courseTitle', courseTitle)
       formData.append('courseDescription', courseDescription)
@@ -147,13 +187,21 @@ const EditCourse = () => {
                 type='number'
                 id='coursePrice'
                 value={coursePrice}
-                onChange={(e) => setCoursePrice(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value < 0) {
+                    setCoursePrice(0)
+                  } else {
+                    setCoursePrice(value)
+                  }
+                }}
                 required
                 min='0'
                 step='0.01'
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
                 placeholder='0.00'
               />
+              <p className='text-xs text-gray-500 mt-1'>Enter a non-negative price (0 for free courses)</p>
             </div>
             <div>
               <label htmlFor='discount' className='block text-sm font-medium text-gray-700 mb-2'>
@@ -163,13 +211,23 @@ const EditCourse = () => {
                 type='number'
                 id='discount'
                 value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value < 0) {
+                    setDiscount(0)
+                  } else if (value > 100) {
+                    setDiscount(100)
+                  } else {
+                    setDiscount(value)
+                  }
+                }}
                 required
                 min='0'
                 max='100'
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
                 placeholder='0'
               />
+              <p className='text-xs text-gray-500 mt-1'>Enter a discount between 0-100%</p>
             </div>
           </div>
 

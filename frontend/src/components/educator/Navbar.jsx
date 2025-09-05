@@ -25,6 +25,14 @@ const Navbar = () => {
             <Link to="/" className="hover:text-red-200">Home</Link>
             <Link to="/about" className="hover:text-red-200">About</Link>
             <Link to="/contact" className="hover:text-red-200">Contact</Link>
+            <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200">
+                <img 
+                    src={user.imageUrl || assets.profile_img} 
+                    alt="Profile" 
+                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-300 shadow-md"
+                />
+                <span className="text-sm text-gray-600">Profile</span>
+            </Link>
             <span className="text-sm text-gray-600 ">Welcome, {user.name}</span>
             <button 
               onClick={handleLogout}

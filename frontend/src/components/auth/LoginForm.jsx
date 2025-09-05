@@ -28,6 +28,7 @@ const LoginForm = ({ onSwitchToRegister }) => {
       .required('Email is required'),
     password: Yup.string()
       .min(6, 'Password must be at least 6 characters')
+      .matches(/^\S*$/, 'Password cannot contain spaces')
       .required('Password is required')
   })
 
@@ -164,6 +165,21 @@ const LoginForm = ({ onSwitchToRegister }) => {
     setForgetPasswordMessage({ type: '', text: '' })
   }
 
+  // Handle password input to prevent spaces
+  const handlePasswordInput = (e, setFieldValue, fieldName) => {
+    const value = e.target.value
+    // Remove any spaces from the input
+    const cleanValue = value.replace(/\s/g, '')
+    setFieldValue(fieldName, cleanValue)
+  }
+
+  // Handle forget password input to prevent spaces
+  const handleForgetPasswordInput = (fieldName, value) => {
+    // Remove any spaces from the input
+    const cleanValue = value.replace(/\s/g, '')
+    setForgetPasswordData({ ...forgetPasswordData, [fieldName]: cleanValue })
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
       <div className={`w-full ${isMobile ? 'max-w-sm' : isTablet ? 'max-w-md' : 'max-w-lg'} mx-auto`}>
@@ -182,7 +198,7 @@ const LoginForm = ({ onSwitchToRegister }) => {
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
             >
-              {({ isSubmitting, errors, touched }) => (
+              {({ isSubmitting, errors, touched, setFieldValue }) => (
                 <Form className="space-y-6">
                   <div>
                     <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -211,7 +227,8 @@ const LoginForm = ({ onSwitchToRegister }) => {
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300 ${
                         errors.password && touched.password ? 'border-red-500' : 'border-gray-300'
                       }`}
-                      placeholder="Enter your password"
+                      placeholder="Enter your password (no spaces allowed)"
+                      onInput={(e) => handlePasswordInput(e, setFieldValue, 'password')}
                     />
                     <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
                   </div>
@@ -351,9 +368,9 @@ const LoginForm = ({ onSwitchToRegister }) => {
                   <input
                     type="password"
                     value={forgetPasswordData.newPassword}
-                    onChange={(e) => setForgetPasswordData({ ...forgetPasswordData, newPassword: e.target.value })}
+                    onChange={(e) => handleForgetPasswordInput('newPassword', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
-                    placeholder="Enter new password"
+                    placeholder="Enter new password (no spaces allowed)"
                   />
                 </div>
                 <div>
@@ -363,9 +380,9 @@ const LoginForm = ({ onSwitchToRegister }) => {
                   <input
                     type="password"
                     value={forgetPasswordData.confirmPassword}
-                    onChange={(e) => setForgetPasswordData({ ...forgetPasswordData, confirmPassword: e.target.value })}
+                    onChange={(e) => handleForgetPasswordInput('confirmPassword', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-300"
-                    placeholder="Confirm new password"
+                    placeholder="Confirm new password (no spaces allowed)"
                   />
                 </div>
                 <button
